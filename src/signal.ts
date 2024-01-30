@@ -1,77 +1,16 @@
-type UpdateCb<T> = (currentValue: T) => T;
+import { Context, State, contexts } from "./reactive";
+import { Accessor, Setter } from "./types";
 
-export const contexts: Context[] = [];
+export const trackDependencies = (fn: Function) => {
+  const currentContext = new Context();
 
-class Context {
-  private owned: Set<State<any>>;
-  private disposeEvents: (() => void)[];
+  contexts.push(currentContext);
 
-  constructor() {
-    this.owned = new Set();
-    this.disposeEvents = [];
-  }
+  fn();
 
-  append(dep: State<any>) {
-    this.owned.add(dep);
-  }
+  currentContext.addDependency(fn);
 
-  addDependency(fn: Function) {
-    this.owned.forEach((item) => item.addDependency(fn));
-  }
-
-  dispose() {
-    this.owned.forEach((item) => item.untrack());
-    this.owned.clear();
-  }
-
-  onDispose(fn: () => void) {
-    this.disposeEvents.push(fn);
-  }
-}
-
-class State<T> {
-  value: T;
-  private deps: Function[];
-
-  constructor(value: T) {
-    this.value = value;
-    this.deps = [];
-  }
-
-  read() {
-    const currentContext = contexts[contexts.length - 1];
-
-    if (currentContext) currentContext.append(this);
-
-    return this.value;
-  }
-
-  write(newValue: T) {
-    this.value = newValue;
-    this.deps.forEach((item) => item());
-  }
-
-  addDependency(dep: Function) {
-    this.deps.push(dep);
-  }
-
-  untrack() {
-    this.deps = [];
-  }
-}
-
-export const createSignal = <T>(value: T) => {
-  const state = new State(value);
-
-  return [
-    () => state.read(),
-    (value: T | UpdateCb<T>) =>
-      state.write(
-        typeof value === "function"
-          ? (value as UpdateCb<T>)(state.value)
-          : value,
-      ),
-  ] as const;
+  return () => cleanup(currentContext);
 };
 
 export const onCleanup = (fn: () => void) => {
@@ -91,25 +30,30 @@ export const cleanup = (context: Context) => {
   toClean.forEach((context) => context.dispose());
 };
 
-export const trackDependencies = (fn: Function) => {
-  const currentContext = new Context();
+export const createSignal = <T>(value: T): [Accessor<T>, Setter<T>] => {
+  const state = new State(value);
 
-  contexts.push(currentContext);
+  return [
+    () => state.read(),
+    (value) =>
+      state.write(
+        typeof value === "function" ? (value as Function)(state.value) : value,
+      ),
+  ];
+};
 
-  fn();
+export const derived = <T>(cb: () => T) => {
+  const [result, setResult] = createSignal<null | T>(null);
 
-  currentContext.addDependency(fn);
+  const cleanupDerived = trackDependencies(() => setResult(cb()));
 
-  return () => cleanup(currentContext);
+  onCleanup(cleanupDerived);
+
+  return result;
 };
 
 export const createEffect = (cb: () => void) => {
   const cleanupEffect = trackDependencies(cb);
 
-  const temp = () => {
-    cleanupEffect();
-    console.log("here");
-  };
-
-  onCleanup(temp);
+  onCleanup(cleanupEffect);
 };

@@ -3,6 +3,7 @@ import {
   trackDependencies,
   contexts,
   createEffect,
+  derived,
 } from "../src";
 import { test, expect } from "bun:test";
 
@@ -62,4 +63,33 @@ test("effects", () => {
   cleanup();
 
   expect(contexts).toBeEmpty();
+});
+
+test("derived signals", () => {
+  const [value, setValue] = createSignal(2);
+  const [another, setAnother] = createSignal("hi");
+
+  const cleanup = trackDependencies(() => {
+    const newSignal = derived(() => `num: ${value()}, another: ${another()}`);
+
+    expect(newSignal()).toBe("num: 2, another: hi");
+
+    createEffect(() => {
+      console.log(newSignal());
+    });
+
+    setAnother("here");
+
+    expect(newSignal()).toBe("num: 2, another: here");
+
+    setValue(4);
+
+    expect(newSignal()).toBe("num: 4, another: here");
+  });
+
+  cleanup();
+
+  expect(contexts).toBeEmpty();
+
+  console.log(contexts);
 });
