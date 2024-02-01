@@ -1,59 +1,83 @@
-import { Context, State, contexts } from "./reactive";
+import { Context, State, owner, currentContext } from "./reactive";
 import { Accessor, Setter } from "./types";
 
-export const trackDependencies = (fn: Function) => {
-  const currentContext = new Context();
-
-  contexts.push(currentContext);
+export const trackScope = (fn: () => void) => {
+  const current = new Context();
+  owner.addContext(current);
 
   fn();
 
-  currentContext.addDependency(fn);
+  owner.popContext();
 
-  return () => cleanup(currentContext);
-};
+  const outerContext = currentContext();
 
-export const onCleanup = (fn: () => void) => {
-  const currentContext = contexts[contexts.length - 1];
+  if (outerContext) {
+    onCleanup(() => cleanup(current));
+  }
 
-  if (!currentContext) return;
-
-  currentContext.onDispose(fn);
+  return () => cleanup(current);
 };
 
 export const cleanup = (context: Context) => {
-  const index = contexts.indexOf(context);
+  context.dispose();
+};
 
-  if (index === -1) return;
+export const onCleanup = (fn: () => void) => {
+  const context = currentContext();
 
-  const toClean = contexts.splice(index);
-  toClean.forEach((context) => context.dispose());
+  if (!context) return;
+
+  context.onDispose(fn);
 };
 
 export const createSignal = <T>(value: T): [Accessor<T>, Setter<T>] => {
-  const state = new State(value);
+  const current = new State(value);
 
   return [
-    () => state.read(),
+    () => current.read(),
     (value) =>
-      state.write(
-        typeof value === "function" ? (value as Function)(state.value) : value,
+      current.write(
+        typeof value === "function"
+          ? (value as Function)(current._read())
+          : value,
       ),
   ];
 };
 
-export const derived = <T>(cb: () => T) => {
-  const [result, setResult] = createSignal<null | T>(null);
+export const createEffect = (fn: () => void) => {
+  const cleanup = trackScope(() => {
+    fn();
 
-  const cleanupDerived = trackDependencies(() => setResult(cb()));
+    const current = currentContext();
 
-  onCleanup(cleanupDerived);
+    if (!current) return;
 
-  return result;
+    current.addEffect(fn);
+  });
+
+  onCleanup(cleanup);
 };
 
-export const createEffect = (cb: () => void) => {
-  const cleanupEffect = trackDependencies(cb);
+export const derived = <T>(fn: () => T) => {
+  const [value, setValue] = createSignal<T | null>(null);
 
-  onCleanup(cleanupEffect);
+  const updateValue = () => {
+    owner.lock();
+    setValue(fn());
+    owner.unlock();
+  };
+
+  const cleanup = trackScope(() => {
+    setValue(fn());
+
+    const current = currentContext();
+
+    if (!current) return;
+
+    current.addEffect(updateValue);
+  });
+
+  onCleanup(cleanup);
+
+  return value;
 };

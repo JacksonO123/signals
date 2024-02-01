@@ -1,95 +1,96 @@
 import {
-  createSignal,
-  trackDependencies,
-  contexts,
   createEffect,
+  createSignal,
   derived,
+  onCleanup,
+  trackScope,
 } from "../src";
 import { test, expect } from "bun:test";
 
-test("working signal", () => {
-  const [getValue, setValue] = createSignal(2);
+test("signals update", () => {
+  const [value, setValue] = createSignal(2);
 
-  expect(getValue()).toBe(2);
+  expect(value()).toBe(2);
 
   setValue(4);
 
-  expect(getValue()).toBe(4);
+  expect(value()).toBe(4);
+
+  setValue((prev) => prev + 1);
+
+  expect(value()).toBe(5);
 });
 
-test("track dependencies", () => {
-  const [getValue, setValue] = createSignal(2);
+test("signals are tracked", () => {
+  const [value] = createSignal(2);
 
-  let timesRan = 0;
-  const cleanup = trackDependencies(() => {
-    console.log(getValue());
-    timesRan++;
+  let cleaned = false;
+  const cleanup = trackScope(() => {
+    console.log(`value is: ${value()}`);
+
+    trackScope(() => {
+      onCleanup(() => (cleaned = true));
+    });
   });
-
-  setValue(4);
-  expect(getValue()).toBe(4);
-  expect(contexts.length).toBe(1);
 
   cleanup();
 
-  setValue(6);
-  expect(getValue()).toBe(6);
-  expect(contexts.length).toBeEmpty();
-  expect(timesRan).toBe(2);
+  expect(cleaned).toBeTrue();
 });
 
 test("effects", () => {
-  const [getValue, setValue] = createSignal(2);
+  const [value, setValue] = createSignal(2);
 
-  const cleanup = trackDependencies(() => {
-    createEffect(() => console.log("1) " + getValue()));
-
+  let cleaned = false;
+  let timesCalled = 0;
+  let timesCleaned = 0;
+  const cleanup = trackScope(() => {
     createEffect(() => {
-      createEffect(() => {
-        createEffect(() => {
-          createEffect(() => {
-            console.log("2) " + (getValue() + 1));
-          });
-        });
+      console.log("- " + value());
+
+      timesCalled++;
+
+      onCleanup(() => {
+        timesCleaned++;
+        cleaned = true;
       });
     });
   });
 
   setValue(4);
 
-  expect(getValue()).toBe(4);
-  expect(contexts.length).toBe(6);
+  setValue(6);
 
   cleanup();
 
-  expect(contexts).toBeEmpty();
+  setValue(8);
+
+  expect(timesCalled).toBe(3);
+  expect(cleaned).toBeTrue();
+  expect(timesCleaned).toBe(1);
 });
 
 test("derived signals", () => {
-  const [value, setValue] = createSignal(2);
-  const [another, setAnother] = createSignal("hi");
+  const cleanup = trackScope(() => {
+    const [value1, setValue1] = createSignal(2);
+    const [value2, setValue2] = createSignal(true);
 
-  const cleanup = trackDependencies(() => {
-    const newSignal = derived(() => `num: ${value()}, another: ${another()}`);
-
-    expect(newSignal()).toBe("num: 2, another: hi");
+    const newValue = derived(() => `num: ${value1()}, thing: ${value2()}`);
 
     createEffect(() => {
-      console.log(newSignal());
+      console.log(newValue());
     });
 
-    setAnother("here");
+    expect(newValue()).toBe("num: 2, thing: true");
 
-    expect(newSignal()).toBe("num: 2, another: here");
+    setValue1(4);
 
-    setValue(4);
+    expect(newValue()).toBe("num: 4, thing: true");
 
-    expect(newSignal()).toBe("num: 4, another: here");
+    setValue2(false);
+
+    expect(newValue()).toBe("num: 4, thing: false");
   });
 
   cleanup();
-
-  expect(contexts).toBeEmpty();
-
-  console.log(contexts);
 });
