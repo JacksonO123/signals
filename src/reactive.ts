@@ -69,6 +69,10 @@ export class Context {
   addEffect(fn: () => void) {
     this.owned.forEach((signal) => signal.addEffect(fn));
   }
+
+  getOwned() {
+    return this.owned;
+  }
 }
 
 export class State<T> {

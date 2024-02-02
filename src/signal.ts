@@ -87,3 +87,22 @@ export const derived = <T>(fn: () => T) => {
 
   return value;
 };
+
+export const getSignalInternals = <T>(fn: Accessor<T>) => {
+  let res: State<T> | null = null;
+
+  const cleanup = () =>
+    trackScope(() => {
+      fn();
+
+      const current = currentContext();
+
+      if (!current) return;
+
+      res = current.getOwned()[0];
+    });
+
+  cleanup();
+
+  return res;
+};
