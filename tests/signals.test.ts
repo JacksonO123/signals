@@ -75,7 +75,18 @@ test("derived signals", () => {
     const [value1, setValue1] = createSignal(2);
     const [value2, setValue2] = createSignal(true);
 
-    const newValue = derived(() => `num: ${value1()}, thing: ${value2()}`);
+    let timesCleaned = 0;
+
+    const newValue = derived(() => {
+      createEffect(() => {
+        onCleanup(() => {
+          timesCleaned++;
+          console.log("cleaned in derived");
+        });
+      });
+
+      return `num: ${value1()}, thing: ${value2()}`;
+    });
 
     createEffect(() => {
       console.log(newValue());
@@ -90,6 +101,7 @@ test("derived signals", () => {
     setValue2(false);
 
     expect(newValue()).toBe("num: 4, thing: false");
+    expect(timesCleaned).toBe(2);
   });
 
   cleanup();

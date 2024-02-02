@@ -1,15 +1,11 @@
 export class Owner {
   private contexts: Context[];
-  private lockedIndex: number;
 
   constructor() {
     this.contexts = [];
-    this.lockedIndex = -1;
   }
 
   currentContext(): Context | undefined {
-    const index = this.contexts.length - 1;
-    if (this.lockedIndex !== -1 && this.lockedIndex <= index) return undefined;
     return this.contexts[this.contexts.length - 1];
   }
 
@@ -18,15 +14,7 @@ export class Owner {
   }
 
   popContext() {
-    if (this.contexts.length - 1 > this.lockedIndex) return this.contexts.pop();
-  }
-
-  lock() {
-    this.lockedIndex = this.contexts.length - 1;
-  }
-
-  unlock() {
-    this.lockedIndex = -1;
+    return this.contexts.pop();
   }
 
   getContext() {
@@ -69,6 +57,13 @@ export class Context {
 
   onDispose(fn: () => void) {
     this.disposeEvents.push(fn);
+    const index = this.disposeEvents.length - 1;
+
+    return (newFn: () => void) => {
+      if (this.disposeEvents.length > index) {
+        this.disposeEvents[index] = newFn;
+      }
+    };
   }
 
   addEffect(fn: () => void) {

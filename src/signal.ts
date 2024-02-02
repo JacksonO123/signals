@@ -27,7 +27,7 @@ export const onCleanup = (fn: () => void) => {
 
   if (!context) return;
 
-  context.onDispose(fn);
+  return context.onDispose(fn);
 };
 
 export const createSignal = <T>(value: T): [Accessor<T>, Setter<T>] => {
@@ -61,23 +61,29 @@ export const createEffect = (fn: () => void) => {
 export const derived = <T>(fn: () => T) => {
   const [value, setValue] = createSignal<T | null>(null);
 
-  const updateValue = () => {
-    owner.lock();
-    setValue(fn());
-    owner.unlock();
+  let prevCleanup: (() => void) | null = null;
+  let updateCleanup: ((newFn: () => void) => void) | undefined = undefined;
+
+  const handleDerived = () => {
+    if (prevCleanup) prevCleanup();
+
+    const cleanup = trackScope(() => {
+      setValue(fn());
+
+      const current = currentContext();
+
+      if (!current) return;
+
+      current.addEffect(handleDerived);
+    });
+
+    prevCleanup = cleanup;
+    updateCleanup?.(cleanup);
   };
 
-  const cleanup = trackScope(() => {
-    setValue(fn());
+  handleDerived();
 
-    const current = currentContext();
-
-    if (!current) return;
-
-    current.addEffect(updateValue);
-  });
-
-  onCleanup(cleanup);
+  updateCleanup = onCleanup(prevCleanup!);
 
   return value;
 };
