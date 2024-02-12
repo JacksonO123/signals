@@ -1,11 +1,26 @@
 {
+  "name": "@jacksonotto/signals",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "description": "A generic signals implementation",
+  "author": "Jackson Otto",
+  "version": "0.1.0",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "npx nodemon -e ts --watch src --exec npx tsc"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/types.d.ts"
+    }
   },
   "dependencies": {
     "typescript": "^5.3.3"
   },
   "devDependencies": {
-    "bun-types": "^1.0.25"
+    "bun-types": "^1.0.25",
+    "nodemon": "^3.0.3"
   }
 }
