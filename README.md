@@ -4,7 +4,7 @@ A lightweight generic signals implementation that can be used for fine-grain rea
 
 # Docs
 
-Signals are a reactivity privative built on the observer pattern.
+Signals are a reactivity primitive built on the observer pattern.
 
 The term "tracked scopes" is used frequently and means any "scope" (usually a callback function) that is being observed by the library. All of the bellow functions track dependencies:
 
