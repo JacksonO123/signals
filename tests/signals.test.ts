@@ -3,6 +3,7 @@ import {
   createEffectOn,
   createSignal,
   derived,
+  getSignalInternals,
   onCleanup,
   trackScope,
 } from "../src";
@@ -128,4 +129,12 @@ test("on function", () => {
   expect(value()).toBe(4);
   expect(cleaned).toBeTrue();
   expect(ran).toBeTrue();
+});
+
+test("get internals", () => {
+  const [value] = createSignal(2);
+
+  const internals = getSignalInternals(value);
+
+  expect(internals).not.toBeNull();
 });

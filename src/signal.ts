@@ -88,19 +88,24 @@ export const derived = <T>(fn: () => T) => {
 export const getSignalInternals = <T>(fn: Accessor<T>) => {
   let res: State<T> | null = null;
 
-  const cleanup = () =>
-    trackScope(() => {
-      fn();
+  const cleanup = trackScope(() => {
+    fn();
 
-      const current = currentContext();
-      if (!current) return;
+    const current = currentContext();
+    if (!current) return;
 
-      res = current.getOwned()[0];
-    });
+    const owned = current.getOwned();
+
+    if (owned.length === 0) {
+      throw new Error("Error finding internals, no signal detected");
+    }
+
+    res = current.getOwned()[0];
+  });
 
   cleanup();
 
-  return res;
+  return res as unknown as State<T>;
 };
 
 export const createEffectOn = (cb: () => void, deps: Accessor<any>[]) => {
