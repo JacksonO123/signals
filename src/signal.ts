@@ -24,7 +24,6 @@ export const cleanup = (context: Context) => {
 
 export const onCleanup = (fn: () => void) => {
   const context = currentContext();
-
   if (!context) return;
 
   return context.onDispose(fn);
@@ -49,7 +48,6 @@ export const createEffect = (fn: () => void) => {
     fn();
 
     const current = currentContext();
-
     if (!current) return;
 
     current.addEffect(fn);
@@ -71,7 +69,6 @@ export const derived = <T>(fn: () => T) => {
       setValue(fn());
 
       const current = currentContext();
-
       if (!current) return;
 
       current.addEffect(handleDerived);
@@ -96,7 +93,6 @@ export const getSignalInternals = <T>(fn: Accessor<T>) => {
       fn();
 
       const current = currentContext();
-
       if (!current) return;
 
       res = current.getOwned()[0];
@@ -105,4 +101,17 @@ export const getSignalInternals = <T>(fn: Accessor<T>) => {
   cleanup();
 
   return res;
+};
+
+export const createEffectOn = (cb: () => void, deps: Accessor<any>[]) => {
+  const cleanup = trackScope(() => {
+    deps.forEach((dep) => dep());
+
+    const current = currentContext();
+    if (!current) return;
+
+    current.addEffect(cb);
+  });
+
+  onCleanup(cleanup);
 };

@@ -1,5 +1,6 @@
 import {
   createEffect,
+  createEffectOn,
   createSignal,
   derived,
   onCleanup,
@@ -105,4 +106,26 @@ test("derived signals", () => {
   });
 
   cleanup();
+});
+
+test("on function", () => {
+  let cleaned = false;
+  let ran = false;
+
+  const [value, setValue] = createSignal(2);
+
+  const cleanup = trackScope(() => {
+    createEffectOn(() => {
+      ran = true;
+      onCleanup(() => (cleaned = true));
+    }, [value]);
+
+    setValue(4);
+  });
+
+  cleanup();
+
+  expect(value()).toBe(4);
+  expect(cleaned).toBeTrue();
+  expect(ran).toBeTrue();
 });

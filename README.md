@@ -63,6 +63,20 @@ createEffect(() => {
 
 The `createEffect` function can be called on its own, without being nested in a tracked scope function for reactivity to work. However calling it in a tracked scope will allow for the observed signals to be cleaned up.
 
+## Controlled effects
+
+Use the `createEffectOn` method to create an effect that relies specifically on a dependency array for more control over the effect. This function does not execute the callback until a dependency changes.
+
+```ts
+const [value, setValue] = createSignal(2);
+
+createEffectOn(() => {
+  console.log("value was updated");
+}, [value]);
+```
+
+This functionality also means that you an add signals to the dependency array without them being used in the callback, or leave dependencies out for different behavior of the effect.
+
 ## Derived signals
 
 Use the `derived` function to create a new signal where the value depends on multiple other signals.
