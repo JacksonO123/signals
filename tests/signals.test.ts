@@ -138,3 +138,34 @@ test("get internals", () => {
 
   expect(internals).not.toBeNull();
 });
+
+test('signal/context disposal', () => {
+  const cleanup = trackScope(() => {
+    let timesCalled = 0;
+
+    const [value, setValue] = createSignal(2);
+
+    createEffect(() => {
+      timesCalled++;
+      console.log('primary', value());
+    });
+
+    setValue(4);
+
+    const clean1 = trackScope(() => {
+      createEffect(() => {
+        console.log('secondary', value());
+      });
+    });
+
+    setValue(4);
+
+    clean1();
+
+    setValue(1);
+
+    expect(timesCalled).toBe(4);
+  });
+
+  cleanup();
+});

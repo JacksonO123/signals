@@ -51,6 +51,10 @@ export const createEffect = (fn: () => void) => {
     if (!current) return;
 
     current.addEffect(fn);
+
+    onCleanup(() => {
+      current.removeEffect(fn);
+    })
   });
 
   onCleanup(cleanup);
@@ -72,6 +76,10 @@ export const derived = <T>(fn: () => T) => {
       if (!current) return;
 
       current.addEffect(handleDerived);
+
+      onCleanup(() => {
+        current.removeEffect(handleDerived);
+      })
     });
 
     prevCleanup = cleanup;
