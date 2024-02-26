@@ -16,6 +16,7 @@ export declare class Context {
     dispose(): void;
     onDispose(fn: () => void): (newFn: () => void) => void;
     addEffect(fn: () => void): void;
+    removeEffect(fn: () => void): void;
     getOwned(): State<any>[];
 }
 export declare class State<T> {
@@ -28,4 +29,5 @@ export declare class State<T> {
     write(newValue: T): void;
     dispose(): void;
     addEffect(fn: () => void): void;
+    removeEffect(fn: () => void): void;
 }

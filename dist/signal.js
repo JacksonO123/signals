@@ -1,4 +1,4 @@
-import { Context, State, owner, currentContext } from "./reactive";
+import { Context, State, owner, currentContext } from "./reactive.js";
 export const trackScope = (fn) => {
     const current = new Context();
     owner.addContext(current);
@@ -35,6 +35,9 @@ export const createEffect = (fn) => {
         if (!current)
             return;
         current.addEffect(fn);
+        onCleanup(() => {
+            current.removeEffect(fn);
+        });
     });
     onCleanup(cleanup);
 };
@@ -51,6 +54,9 @@ export const derived = (fn) => {
             if (!current)
                 return;
             current.addEffect(handleDerived);
+            onCleanup(() => {
+                current.removeEffect(handleDerived);
+            });
         });
         prevCleanup = cleanup;
         updateCleanup?.(cleanup);
@@ -61,13 +67,27 @@ export const derived = (fn) => {
 };
 export const getSignalInternals = (fn) => {
     let res = null;
-    const cleanup = () => trackScope(() => {
+    const cleanup = trackScope(() => {
         fn();
         const current = currentContext();
         if (!current)
             return;
+        const owned = current.getOwned();
+        if (owned.length === 0) {
+            throw new Error("Error finding internals, no signal detected");
+        }
         res = current.getOwned()[0];
     });
     cleanup();
     return res;
+};
+export const createEffectOn = (cb, deps) => {
+    const cleanup = trackScope(() => {
+        deps.forEach((dep) => dep());
+        const current = currentContext();
+        if (!current)
+            return;
+        current.addEffect(cb);
+    });
+    onCleanup(cleanup);
 };

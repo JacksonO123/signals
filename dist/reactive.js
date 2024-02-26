@@ -37,7 +37,6 @@ export class Context {
     dispose() {
         this.disposeEvents.forEach((event) => event());
         this.disposeEvents = [];
-        this.owned.forEach((signal) => signal.dispose());
         this.owned = [];
     }
     onDispose(fn) {
@@ -51,6 +50,9 @@ export class Context {
     }
     addEffect(fn) {
         this.owned.forEach((signal) => signal.addEffect(fn));
+    }
+    removeEffect(fn) {
+        this.owned.forEach((signal) => signal.removeEffect(fn));
     }
     getOwned() {
         return this.owned;
@@ -82,5 +84,8 @@ export class State {
     }
     addEffect(fn) {
         this.effects.push(fn);
+    }
+    removeEffect(fn) {
+        this.effects = this.effects.filter(effect => effect !== fn);
     }
 }

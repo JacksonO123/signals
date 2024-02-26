@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "module": "esnext",
+    "lib": [
+      "ESNext"
+    ],
+    "module": "NodeNext",
     "target": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "NodeNext",
     "moduleDetection": "force",
     "declaration": true,
     "rootDir": "src",
@@ -19,5 +21,7 @@
       "bun-types" // add Bun global
     ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

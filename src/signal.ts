@@ -1,5 +1,5 @@
-import { Context, State, owner, currentContext } from "./reactive";
-import { Accessor, Setter } from "./types";
+import { Context, State, owner, currentContext } from "./reactive.js";
+import { Accessor, Setter } from "./types.js";
 
 export const trackScope = (fn: () => void) => {
   const current = new Context();
