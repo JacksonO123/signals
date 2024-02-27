@@ -6,15 +6,17 @@ A lightweight generic signals implementation that can be used for fine-grain rea
 
 Signals are a reactivity primitive built on the observer pattern.
 
-The term "tracked scopes" is used frequently and means any "scope" (usually a callback function) that is being observed by the library. All of the bellow functions track dependencies:
+I use the term "tracked scopes" frequently and means any "scope" (usually a callback function) that is being observed by the library. All of the bellow functions track dependencies:
 
 - `trackScope`
 - `createEffect`
 - `derived`
 
+It is important that both `createEffect` and `derived` are used within a `trackScope` call so that they are able to be disposed.
+
 ## Tracking dependencies
 
-To enable the signals to be observed, use the `trackScope` function. While a few other functions track dependencies, `trackScope` is important because it returns a cleanup function to dispose of the observed signals.
+To enable the signals to be observed, use the `trackScope` function to dispose dependencies.
 
 ```ts
 const cleanup = trackScope(() => {
@@ -24,7 +26,7 @@ const cleanup = trackScope(() => {
 
 ## Creating signals
 
-To create a new signal use the `createSignal` function. This is not required to be called inside of a tracked scope for reactivity to work.
+To create a new signal use the `createSignal` function.
 
 ```ts
 // creates a signal with the default value of 2
@@ -61,8 +63,6 @@ createEffect(() => {
 });
 ```
 
-The `createEffect` function can be called on its own, without being nested in a tracked scope function for reactivity to work. However calling it in a tracked scope will allow for the observed signals to be cleaned up.
-
 ## Controlled effects
 
 Use the `createEffectOn` method to create an effect that relies specifically on a dependency array for more control over the effect. This function does not execute the callback until a dependency changes.
@@ -91,11 +91,9 @@ const newValue = derived(() => `value1: ${value1()}, value2: ${value2()}`);
 
 The return type is a getter function to the derived signal.
 
-The `derived` function can be called on its own, without being nested in a tracked scope for reactivity to work. However wrapping it in a tracked scope will allow for the observed signals to be cleaned up.
-
 ## Custom cleanup logic
 
-When tracked scopes are cleaned up, you can specify custom cleanup logic using the `onCleanup` function.
+You can specify custom cleanup logic using the `onCleanup` function within a tracked scope.
 
 ```ts
 const cleanup = trackScope(() => {
