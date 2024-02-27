@@ -14,7 +14,7 @@ The term "tracked scopes" is used frequently and means any "scope" (usually a ca
 
 ## Tracking dependencies
 
-To track enable the signals to be observed, use the `trackScope` function. While a few other functions track dependencies, `trackScope` is important because it returns a cleanup function to dispose of the observed signals.
+To enable the signals to be observed, use the `trackScope` function. While a few other functions track dependencies, `trackScope` is important because it returns a cleanup function to dispose of the observed signals.
 
 ```ts
 const cleanup = trackScope(() => {
