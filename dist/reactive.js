@@ -34,10 +34,16 @@ export class Context {
     own(state) {
         this.owned.push(state);
     }
+    ownMany(states) {
+        this.owned.push(...states);
+    }
     dispose() {
+        this.runDisposeEvents();
+        this.owned = [];
+    }
+    runDisposeEvents() {
         this.disposeEvents.forEach((event) => event());
         this.disposeEvents = [];
-        this.owned = [];
     }
     onDispose(fn) {
         this.disposeEvents.push(fn);
@@ -86,6 +92,6 @@ export class State {
         this.effects.push(fn);
     }
     removeEffect(fn) {
-        this.effects = this.effects.filter(effect => effect !== fn);
+        this.effects = this.effects.filter((effect) => effect !== fn);
     }
 }

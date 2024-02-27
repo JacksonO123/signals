@@ -13,7 +13,9 @@ export declare class Context {
     private disposeEvents;
     constructor();
     own(state: State<any>): void;
+    ownMany(states: State<any>[]): void;
     dispose(): void;
+    runDisposeEvents(): void;
     onDispose(fn: () => void): (newFn: () => void) => void;
     addEffect(fn: () => void): void;
     removeEffect(fn: () => void): void;

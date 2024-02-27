@@ -139,7 +139,7 @@ test("get internals", () => {
   expect(internals).not.toBeNull();
 });
 
-test('signal/context disposal', () => {
+test("signal/context disposal", () => {
   const cleanup = trackScope(() => {
     let timesCalled = 0;
 
@@ -147,14 +147,14 @@ test('signal/context disposal', () => {
 
     createEffect(() => {
       timesCalled++;
-      console.log('primary', value());
+      console.log("primary", value());
     });
 
     setValue(4);
 
     const clean1 = trackScope(() => {
       createEffect(() => {
-        console.log('secondary', value());
+        console.log("secondary", value());
       });
     });
 

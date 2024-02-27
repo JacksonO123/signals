@@ -47,11 +47,18 @@ export class Context {
     this.owned.push(state);
   }
 
-  dispose() {
-    this.disposeEvents.forEach((event) => event());
+  ownMany(states: State<any>[]) {
+    this.owned.push(...states);
+  }
 
-    this.disposeEvents = [];
+  dispose() {
+    this.runDisposeEvents();
     this.owned = [];
+  }
+
+  runDisposeEvents() {
+    this.disposeEvents.forEach((event) => event());
+    this.disposeEvents = [];
   }
 
   onDispose(fn: () => void) {
@@ -116,6 +123,6 @@ export class State<T> {
   }
 
   removeEffect(fn: () => void) {
-    this.effects = this.effects.filter(effect => effect !== fn);
+    this.effects = this.effects.filter((effect) => effect !== fn);
   }
 }

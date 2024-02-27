@@ -1,11 +1,11 @@
 import { Context, State, owner, currentContext } from "./reactive.js";
-export const trackScope = (fn) => {
+export const trackScope = (fn, registerCleanup = true) => {
     const current = new Context();
     owner.addContext(current);
     fn();
     owner.popContext();
     const outerContext = currentContext();
-    if (outerContext) {
+    if (outerContext && registerCleanup) {
         onCleanup(() => cleanup(current));
     }
     return () => cleanup(current);

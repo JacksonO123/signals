@@ -1,7 +1,7 @@
 import { Context, State, owner, currentContext } from "./reactive.js";
 import { Accessor, Setter } from "./types.js";
 
-export const trackScope = (fn: () => void) => {
+export const trackScope = (fn: () => void, registerCleanup = true) => {
   const current = new Context();
   owner.addContext(current);
 
@@ -11,7 +11,7 @@ export const trackScope = (fn: () => void) => {
 
   const outerContext = currentContext();
 
-  if (outerContext) {
+  if (outerContext && registerCleanup) {
     onCleanup(() => cleanup(current));
   }
 
@@ -54,7 +54,7 @@ export const createEffect = (fn: () => void) => {
 
     onCleanup(() => {
       current.removeEffect(fn);
-    })
+    });
   });
 
   onCleanup(cleanup);
@@ -79,7 +79,7 @@ export const derived = <T>(fn: () => T) => {
 
       onCleanup(() => {
         current.removeEffect(handleDerived);
-      })
+      });
     });
 
     prevCleanup = cleanup;

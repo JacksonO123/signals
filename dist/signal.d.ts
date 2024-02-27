@@ -1,6 +1,6 @@
 import { Context, State } from "./reactive.js";
 import { Accessor, Setter } from "./types.js";
-export declare const trackScope: (fn: () => void) => () => void;
+export declare const trackScope: (fn: () => void, registerCleanup?: boolean) => () => void;
 export declare const cleanup: (context: Context) => void;
 export declare const onCleanup: (fn: () => void) => ((newFn: () => void) => void) | undefined;
 export declare const createSignal: <T>(value: T) => [Accessor<T>, Setter<T>];
