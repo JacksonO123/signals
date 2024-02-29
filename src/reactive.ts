@@ -35,25 +35,27 @@ const track = (state: State<any>) => {
 };
 
 export class Context {
-  private owned: State<any>[];
+  private owned: Set<State<any>>;
   private disposeEvents: (() => void)[];
 
   constructor() {
-    this.owned = [];
+    this.owned = new Set();
     this.disposeEvents = [];
   }
 
   own(state: State<any>) {
-    this.owned.push(state);
+    this.owned.add(state);
   }
 
   ownMany(states: State<any>[]) {
-    this.owned.push(...states);
+    states.forEach((state) => {
+      this.owned.add(state);
+    });
   }
 
   dispose() {
     this.runDisposeEvents();
-    this.owned = [];
+    this.owned.clear();
   }
 
   runDisposeEvents() {
@@ -81,7 +83,7 @@ export class Context {
   }
 
   getOwned() {
-    return this.owned;
+    return [...this.owned];
   }
 }
 

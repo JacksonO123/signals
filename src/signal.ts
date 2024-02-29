@@ -60,14 +60,31 @@ export const createEffect = (fn: () => void) => {
   onCleanup(cleanup);
 };
 
+export const cleanupHandler = () => {
+  let cleanup: (() => void) | null = null;
+  let updateCleanup: ((newFn: () => void) => void) | undefined = undefined;
+
+  return [
+    () => cleanup?.(),
+    (newCleanup: () => void) => {
+      if (updateCleanup) {
+        updateCleanup(newCleanup);
+      } else {
+        updateCleanup = onCleanup(newCleanup);
+      }
+
+      cleanup = newCleanup;
+    },
+  ] as const;
+};
+
 export const derived = <T>(fn: () => T) => {
   const [value, setValue] = createSignal<T | null>(null);
 
-  let prevCleanup: (() => void) | null = null;
-  let updateCleanup: ((newFn: () => void) => void) | undefined = undefined;
+  const [prevCleanup, addCleanup] = cleanupHandler();
 
   const handleDerived = () => {
-    if (prevCleanup) prevCleanup();
+    prevCleanup();
 
     const cleanup = trackScope(() => {
       setValue(fn());
@@ -82,13 +99,10 @@ export const derived = <T>(fn: () => T) => {
       });
     });
 
-    prevCleanup = cleanup;
-    updateCleanup?.(cleanup);
+    addCleanup(cleanup);
   };
 
   handleDerived();
-
-  updateCleanup = onCleanup(prevCleanup!);
 
   return value;
 };
@@ -124,6 +138,10 @@ export const createEffectOn = (cb: () => void, deps: Accessor<any>[]) => {
     if (!current) return;
 
     current.addEffect(cb);
+
+    onCleanup(() => {
+      current.removeEffect(cb);
+    });
   });
 
   onCleanup(cleanup);

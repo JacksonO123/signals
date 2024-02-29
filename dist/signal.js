@@ -41,13 +41,27 @@ export const createEffect = (fn) => {
     });
     onCleanup(cleanup);
 };
+export const cleanupHandler = () => {
+    let cleanup = null;
+    let updateCleanup = undefined;
+    return [
+        () => cleanup?.(),
+        (newCleanup) => {
+            if (updateCleanup) {
+                updateCleanup(newCleanup);
+            }
+            else {
+                updateCleanup = onCleanup(newCleanup);
+            }
+            cleanup = newCleanup;
+        },
+    ];
+};
 export const derived = (fn) => {
     const [value, setValue] = createSignal(null);
-    let prevCleanup = null;
-    let updateCleanup = undefined;
+    const [prevCleanup, addCleanup] = cleanupHandler();
     const handleDerived = () => {
-        if (prevCleanup)
-            prevCleanup();
+        prevCleanup();
         const cleanup = trackScope(() => {
             setValue(fn());
             const current = currentContext();
@@ -58,11 +72,9 @@ export const derived = (fn) => {
                 current.removeEffect(handleDerived);
             });
         });
-        prevCleanup = cleanup;
-        updateCleanup?.(cleanup);
+        addCleanup(cleanup);
     };
     handleDerived();
-    updateCleanup = onCleanup(prevCleanup);
     return value;
 };
 export const getSignalInternals = (fn) => {
@@ -88,6 +100,9 @@ export const createEffectOn = (cb, deps) => {
         if (!current)
             return;
         current.addEffect(cb);
+        onCleanup(() => {
+            current.removeEffect(cb);
+        });
     });
     onCleanup(cleanup);
 };

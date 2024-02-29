@@ -28,18 +28,20 @@ export class Context {
     owned;
     disposeEvents;
     constructor() {
-        this.owned = [];
+        this.owned = new Set();
         this.disposeEvents = [];
     }
     own(state) {
-        this.owned.push(state);
+        this.owned.add(state);
     }
     ownMany(states) {
-        this.owned.push(...states);
+        states.forEach((state) => {
+            this.owned.add(state);
+        });
     }
     dispose() {
         this.runDisposeEvents();
-        this.owned = [];
+        this.owned.clear();
     }
     runDisposeEvents() {
         this.disposeEvents.forEach((event) => event());
@@ -61,7 +63,7 @@ export class Context {
         this.owned.forEach((signal) => signal.removeEffect(fn));
     }
     getOwned() {
-        return this.owned;
+        return [...this.owned];
     }
 }
 export class State {
