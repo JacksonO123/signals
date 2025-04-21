@@ -1,4 +1,10 @@
-import { Context, State, owner, currentContext } from "./reactive.js";
+import {
+  Context,
+  State,
+  owner,
+  currentContext,
+  globalState,
+} from "./reactive.js";
 import { Accessor, Setter } from "./types.js";
 
 export const trackScope = (fn: () => void, registerCleanup = true) => {
@@ -16,6 +22,13 @@ export const trackScope = (fn: () => void, registerCleanup = true) => {
   }
 
   return () => cleanup(current);
+};
+
+export const forceGuardTrack = (fn: () => void, value: boolean) => {
+  const prev = globalState.reading;
+  globalState.reading = value;
+  fn();
+  globalState.reading = prev;
 };
 
 export const cleanup = (context: Context) => {
@@ -78,16 +91,15 @@ export const cleanupHandler = () => {
   ] as const;
 };
 
-export const derived = <T>(fn: () => T) => {
+export const memo = <T>(fn: () => T) => {
   const [value, setValue] = createSignal<T | null>(null);
-
   const [prevCleanup, addCleanup] = cleanupHandler();
 
   const handleDerived = () => {
     prevCleanup();
 
     const cleanup = trackScope(() => {
-      setValue(fn());
+      forceGuardTrack(() => setValue(fn()), true);
 
       const current = currentContext();
       if (!current) return;
@@ -145,4 +157,15 @@ export const createEffectOn = (cb: () => void, deps: Accessor<any>[]) => {
   });
 
   onCleanup(cleanup);
+};
+
+export const getUntrackedValue = <T>(signal: Accessor<T>) => {
+  let value: T;
+
+  forceGuardTrack(() => {
+    value = signal();
+  }, false);
+
+  // @ts-expect-error
+  return value;
 };

@@ -2,7 +2,7 @@ import {
   createEffect,
   createEffectOn,
   createSignal,
-  derived,
+  memo,
   getSignalInternals,
   onCleanup,
   trackScope,
@@ -79,7 +79,7 @@ test("derived signals", () => {
 
     let timesCleaned = 0;
 
-    const newValue = derived(() => {
+    const newValue = memo(() => {
       createEffect(() => {
         onCleanup(() => {
           timesCleaned++;

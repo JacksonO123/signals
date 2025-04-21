@@ -1,4 +1,4 @@
-import { Context, State, owner, currentContext } from "./reactive.js";
+import { Context, State, owner, currentContext, globalState, } from "./reactive.js";
 export const trackScope = (fn, registerCleanup = true) => {
     const current = new Context();
     owner.addContext(current);
@@ -9,6 +9,12 @@ export const trackScope = (fn, registerCleanup = true) => {
         onCleanup(() => cleanup(current));
     }
     return () => cleanup(current);
+};
+export const forceGuardTrack = (fn, value) => {
+    const prev = globalState.reading;
+    globalState.reading = value;
+    fn();
+    globalState.reading = prev;
 };
 export const cleanup = (context) => {
     context.dispose();
@@ -57,13 +63,13 @@ export const cleanupHandler = () => {
         },
     ];
 };
-export const derived = (fn) => {
+export const memo = (fn) => {
     const [value, setValue] = createSignal(null);
     const [prevCleanup, addCleanup] = cleanupHandler();
     const handleDerived = () => {
         prevCleanup();
         const cleanup = trackScope(() => {
-            setValue(fn());
+            forceGuardTrack(() => setValue(fn()), true);
             const current = currentContext();
             if (!current)
                 return;
@@ -105,4 +111,12 @@ export const createEffectOn = (cb, deps) => {
         });
     });
     onCleanup(cleanup);
+};
+export const getUntrackedValue = (signal) => {
+    let value;
+    forceGuardTrack(() => {
+        value = signal();
+    }, false);
+    // @ts-expect-error
+    return value;
 };

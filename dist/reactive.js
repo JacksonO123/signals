@@ -1,3 +1,4 @@
+import { forceGuardTrack } from "./signal.js";
 export class Owner {
     contexts;
     constructor() {
@@ -18,11 +19,15 @@ export class Owner {
 }
 export const owner = new Owner();
 export const currentContext = () => owner.currentContext();
+export const globalState = {
+    reading: true,
+};
 const track = (state) => {
     const current = currentContext();
     if (!current)
         return;
-    current.own(state);
+    if (globalState.reading)
+        current.own(state);
 };
 export class Context {
     owned;
@@ -85,7 +90,7 @@ export class State {
     }
     write(newValue) {
         this._write(newValue);
-        this.effects.forEach((effect) => effect());
+        forceGuardTrack(() => this.effects.forEach((effect) => effect()), false);
     }
     dispose() {
         this.effects = [];

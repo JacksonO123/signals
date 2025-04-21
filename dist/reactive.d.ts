@@ -8,6 +8,9 @@ export declare class Owner {
 }
 export declare const owner: Owner;
 export declare const currentContext: () => Context | undefined;
+export declare const globalState: {
+    reading: boolean;
+};
 export declare class Context {
     private owned;
     private disposeEvents;
